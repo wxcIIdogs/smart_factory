@@ -29,6 +29,7 @@
 #include "shellUsart.h"
 #include "gpio.h"
 #include "Wifi.h"
+#include "GPS.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -191,14 +192,13 @@ void StartMainTask(void *argument)
 {
   /* USER CODE BEGIN StartMainTask */
 	initShellusart();
+  GPS_Init();
+  __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
   /* Infinite loop */
   for(;;)
-  {
-		LED_OPEN_R;		
-    osDelay(500);
-		LED_CLOSE_R;			
-		osDelay(500);		
-
+  {	
+    GPS_Process();
+    osDelay(10);
   }
   /* USER CODE END StartMainTask */
 }
@@ -249,6 +249,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		Wifi_RxCallBack();
 	}
+	if(huart == &huart4)
+	{
+		GPS_CallBack();
+	}  
 }
 /* USER CODE END Application */
 

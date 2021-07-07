@@ -1,7 +1,7 @@
 #include "main.h"
 #include "revDataInfo.h"
 #include "wirelessDevice.h"
-
+#include "pointManager.h"
 /*
 *author:Wxc
 *info:
@@ -20,10 +20,7 @@ typedef enum
 
 void ansyWireLessData(uint8_t *buff,int32_t len,wireLessEnum flag)
 {
-    if(flag == WIRE_HEAD)
-    {
-        s_flag = WIRE_HEAD;
-    }
+
     static int s_flag = WIRE_HEAD;
     static int s_cmd = 0;
     static int s_len = 0;
@@ -31,9 +28,17 @@ void ansyWireLessData(uint8_t *buff,int32_t len,wireLessEnum flag)
     static int s_count = 0;
     static uint8_t s_crc = 0;
     static int step = 0;
-    for(int i =0 ; i < len ; i ++)
+    static uint8_t oriBuff[256];
+    static int oriBuffLength = 0;
+
+    if(flag == WIRE_HEAD)
     {
+        s_flag = WIRE_HEAD;
+    }    
+    for(int i =0 ; i < len ; i ++)
+    {        
         uint8_t data = buff[i];
+        oriBuff[oriBuffLength++] = data;        
         switch (s_flag)
         {
         case WIRE_HEAD:
@@ -52,6 +57,8 @@ void ansyWireLessData(uint8_t *buff,int32_t len,wireLessEnum flag)
             if(data == 0x55)
             {
                 step ++;
+                oriBuff[0] = 0x55; 
+                oriBuffLength = 1;
             }
             break;
         case WIRE_CMD:       
@@ -70,7 +77,7 @@ void ansyWireLessData(uint8_t *buff,int32_t len,wireLessEnum flag)
             else
             {
                 step ++;
-                s_len += (data<< 8);
+                s_len = (data<< 8);
             }
             break;
         case WIRE_DATA:   
@@ -97,14 +104,28 @@ void ansyWireLessData(uint8_t *buff,int32_t len,wireLessEnum flag)
         case WIRE_CRC:  
             if(s_crc == data)
             {
-                //check success 
-                
+                //check success
+                if(s_cmd == 0x01)
+                {
+                    //upload data
+                    
+                }
+                else if(s_cmd == 0x03)
+                {
+                    //heart data
+                    setPointId(revBuff);
+                }
+                s_crc = 0;
+                s_count = 0;
+                s_flag = WIRE_HEAD;
+                step = 0;
             }          
             break;                                                        
         default:
             break;
         }    
     }
+    
 }
 
 

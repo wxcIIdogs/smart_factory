@@ -10,9 +10,4 @@ extern 	void initWirelessUsart(void);
 extern 	void wirelessWriteDebug(uint8_t *data,int len);
 
 
-
-
-
-
-
 #endif
