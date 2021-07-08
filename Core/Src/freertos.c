@@ -30,6 +30,7 @@
 #include "gpio.h"
 #include "Wifi.h"
 #include "GPS.h"
+#include "mqttApp.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -194,11 +195,17 @@ void StartMainTask(void *argument)
 	initShellusart();
   GPS_Init();
   __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
+  app_init();
   /* Infinite loop */
   for(;;)
   {	
+    if(getWifiConnectFlag())
+    {
+      app_tick();
+    }
     GPS_Process();
     osDelay(10);
+
   }
   /* USER CODE END StartMainTask */
 }
@@ -229,7 +236,7 @@ void revGpsDataFunc(void *argument)
 void Callback01(void *argument)
 {
   /* USER CODE BEGIN Callback01 */
-
+  
   /* USER CODE END Callback01 */
 }
 

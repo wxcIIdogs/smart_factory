@@ -93,7 +93,7 @@ void	Wifi_UserInit(void);
 void  Wifi_UserProcess(void);
 void  Wifi_UserGetUdpData(uint8_t LinkId,uint16_t DataLen,uint8_t *Data);
 void  Wifi_UserGetTcpData(uint8_t LinkId,uint16_t DataLen,uint8_t *Data);
-
+int getWifiConnectFlag(void);
 //###################################################################################################
 void	Wifi_RxCallBack(void);
 //###################################################################################################

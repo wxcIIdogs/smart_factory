@@ -1,5 +1,13 @@
 
 #include "Wifi.h"
+#include "mqttApp.h"
+
+static int wifiConnectFlag = 0;
+//#######################################################################################
+int getWifiConnectFlag()
+{
+  return wifiConnectFlag;
+}
 
 //#######################################################################################
 void	Wifi_UserInit(void)
@@ -19,16 +27,17 @@ void  Wifi_UserProcess(void)
   {    
     if(last!=1)
 		{
-			
+			wifiConnectFlag = 0;
 		}
     last=1;
   }
   else
-  {   
+  {
     if(last!=2)
     {
 			//Wifi.MyGateWay
       Wifi_TcpIp_StartTcpConnection(0,"192.168.0.106",777,10);
+      wifiConnectFlag = 1;
     }
     last=2;
   }
@@ -41,6 +50,7 @@ void  Wifi_UserGetUdpData(uint8_t LinkId,uint16_t DataLen,uint8_t *Data)
 //#######################################################################################
 void  Wifi_UserGetTcpData(uint8_t LinkId,uint16_t DataLen,uint8_t *Data)
 {
-  Wifi_TcpIp_SendDataTcp(LinkId,2,(uint8_t*)"OK");
+  //Wifi_TcpIp_SendDataTcp(LinkId,2,(uint8_t*)"OK");
+  app_received(DataLen,Data);
 }
 //#######################################################################################
