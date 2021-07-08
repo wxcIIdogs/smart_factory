@@ -24,7 +24,7 @@ void ansyWireLessData(uint8_t *buff,int32_t len,wireLessEnum flag)
     static int s_flag = WIRE_HEAD;
     static int s_cmd = 0;
     static int s_len = 0;
-    static int uint8_t revBuff[256];
+    static uint8_t revBuff[256];
     static int s_count = 0;
     static uint8_t s_crc = 0;
     static int step = 0;

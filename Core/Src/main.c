@@ -27,11 +27,16 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+int fputc(int ch, FILE* stream)
+{
+		HAL_UART_Transmit(&huart1,(uint8_t *)&ch,1,0xff);
+    return ch;
+}
 
 /* USER CODE END PTD */
 

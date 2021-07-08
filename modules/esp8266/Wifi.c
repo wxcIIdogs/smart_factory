@@ -186,12 +186,16 @@ void	Wifi_TxClear(void)
 //#########################################################################################################
 void	Wifi_RxCallBack(void)
 {
+	
   //+++ at command buffer
   if(Wifi.RxIsData==false)                                              
   {
     Wifi.RxBuffer[Wifi.RxIndex] = Wifi.usartBuff;
     if(Wifi.RxIndex < _WIFI_RX_SIZE)
       Wifi.RxIndex++;
+		else
+			Wifi.RxIndex = 0;
+		printf("%c",Wifi.usartBuff);
   }
   //--- at command buffer
   //+++  data buffer
@@ -267,7 +271,7 @@ void	Wifi_RxCallBack(void)
 }
 void WifiTask(void *argument)
 {
-	osDelay(3000);
+	osDelay(1000);
 	Wifi_SendStringAndWait("AT\r\n",1000);
  	Wifi_SetRfPower(82);
 	Wifi_TcpIp_GetMultiConnection();
@@ -284,9 +288,7 @@ void WifiTask(void *argument)
 	while(1)
 	{	
 		Wifi_GetMyIp();	
-		if((Wifi.Mode==WifiMode_SoftAp) || (Wifi.Mode==WifiMode_StationAndSoftAp))
-		Wifi_SoftAp_GetConnectedDevices();
-			Wifi_TcpIp_GetConnectionStatus();
+		Wifi_TcpIp_GetConnectionStatus();
 		Wifi_RxClear();  
 		for(uint8_t i=0; i< 100; i++)
 		{
@@ -987,7 +989,7 @@ bool  Wifi_TcpIp_SendDataUdp(uint8_t LinkId,uint16_t dataLen,uint8_t *data)
   
 }
 //#########################################################################################################
-bool  Wifi_TcpIp_SendDataTcp(uint8_t LinkId,uint16_t dataLen,uint8_t *data)
+bool  Wifi_TcpIp_SendDataTcp(uint8_t LinkId,uint8_t *data,uint16_t dataLen)
 {
   osSemaphoreWait(WifiSemHandle,osWaitForever);
 	uint8_t result;

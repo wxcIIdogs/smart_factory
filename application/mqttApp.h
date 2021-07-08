@@ -19,10 +19,13 @@
 
 #define APP_SOCKET_NO               0
 
-#define send                    Wifi_TcpIp_SendDataTcp
+#define send                    	Wifi_TcpIp_SendDataTcp
+#define DEBUG_PRINT(format,...)		printf(format,##__VA_ARGS__);
 
 
 
+
+extern void mqtt_publish(char *topic, char *payload, uint16_t payload_length, int qos);
 
 
 void app_connected(void);

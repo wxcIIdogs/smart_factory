@@ -29,7 +29,7 @@
 #include "shellUsart.h"
 #include "gpio.h"
 #include "Wifi.h"
-#include "GPS.h"
+//#include "GPS.h"
 #include "mqttApp.h"
 /* USER CODE END Includes */
 
@@ -63,6 +63,20 @@ const osThreadAttr_t main_user_attributes = {
 osThreadId_t revGpsDataHandle;
 const osThreadAttr_t revGpsData_attributes = {
   .name = "revGpsData",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for myTask03 */
+osThreadId_t myTask03Handle;
+const osThreadAttr_t myTask03_attributes = {
+  .name = "myTask03",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh1,
+};
+/* Definitions for myTask04 */
+osThreadId_t myTask04Handle;
+const osThreadAttr_t myTask04_attributes = {
+  .name = "myTask04",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
@@ -110,6 +124,8 @@ const osEventFlagsAttr_t myEvent01_attributes = {
 
 void StartMainTask(void *argument);
 void revGpsDataFunc(void *argument);
+void wifiTask(void *argument);
+void dataUser(void *argument);
 void Callback01(void *argument);
 void Callback02(void *argument);
 
@@ -169,6 +185,12 @@ void MX_FREERTOS_Init(void) {
   /* creation of revGpsData */
   revGpsDataHandle = osThreadNew(revGpsDataFunc, NULL, &revGpsData_attributes);
 
+  /* creation of myTask03 */
+  myTask03Handle = osThreadNew(wifiTask, NULL, &myTask03_attributes);
+
+  /* creation of myTask04 */
+  myTask04Handle = osThreadNew(dataUser, NULL, &myTask04_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -193,7 +215,7 @@ void StartMainTask(void *argument)
 {
   /* USER CODE BEGIN StartMainTask */
 	initShellusart();
-  GPS_Init();
+//  GPS_Init();
   __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
   app_init();
   /* Infinite loop */
@@ -203,7 +225,8 @@ void StartMainTask(void *argument)
     {
       app_tick();
     }
-    GPS_Process();
+		
+//    GPS_Process();
     osDelay(10);
 
   }
@@ -220,7 +243,30 @@ void StartMainTask(void *argument)
 void revGpsDataFunc(void *argument)
 {
   /* USER CODE BEGIN revGpsDataFunc */
-	Wifi_Init(0);
+
+  /* Infinite loop */
+  for(;;)
+  {
+		LED_OPEN_B;
+		osDelay(300);
+		LED_CLOSE_B;
+		osDelay(300);
+    osDelay(1);
+  }
+  /* USER CODE END revGpsDataFunc */
+}
+
+/* USER CODE BEGIN Header_wifiTask */
+/**
+* @brief Function implementing the myTask03 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_wifiTask */
+void wifiTask(void *argument)
+{
+  /* USER CODE BEGIN wifiTask */
+	Wifi_Init(osPriorityHigh);
 	__HAL_UART_ENABLE_IT(&huart2,UART_IT_RXNE);
 	
   /* Infinite loop */
@@ -229,7 +275,25 @@ void revGpsDataFunc(void *argument)
 		WifiTask(argument);
     osDelay(1);
   }
-  /* USER CODE END revGpsDataFunc */
+  /* USER CODE END wifiTask */
+}
+
+/* USER CODE BEGIN Header_dataUser */
+/**
+* @brief Function implementing the myTask04 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_dataUser */
+void dataUser(void *argument)
+{
+  /* USER CODE BEGIN dataUser */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END dataUser */
 }
 
 /* Callback01 function */
@@ -258,7 +322,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 	if(huart == &huart4)
 	{
-		GPS_CallBack();
+//		GPS_CallBack();
 	}  
 }
 /* USER CODE END Application */

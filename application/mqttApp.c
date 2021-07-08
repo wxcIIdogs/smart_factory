@@ -10,7 +10,7 @@
 #include <string.h>
 #include "mqtt-msg.h"
 #include "Wifi.h"
-static const uint8_t target_host[4] = {192, 168, 10, 20};
+static const uint8_t target_host[4] = {123, 56, 87, 60};
 static const uint16_t target_port = 1883;
 static uint8_t buf[100];
 
@@ -26,7 +26,7 @@ static mqtt_message_t *connect_msg;
 
 static void mqtt_init(void);
 static void mqtt_connect(uint8_t *host, uint16_t port, char* cid);
-static void mqtt_publish(char *topic, char *payload, uint16_t payload_length, int qos);
+
 static void mqtt_subscribe(char* topic, int qos);
 static void mqtt_ping(void);
 static void mqtt_connected(void);
@@ -59,7 +59,7 @@ static void mqtt_connect(uint8_t *host, uint16_t port, char* cid)
 	// connect(APP_SOCKET_NO, host, port);
 }
 
-static void mqtt_publish(char *topic, char *payload, uint16_t payload_length, int qos)
+void mqtt_publish(char *topic, char *payload, uint16_t payload_length, int qos)
 {
 	mqtt_message_t *msg_ptr;
 	int8_t rslt = 0;
@@ -178,6 +178,7 @@ void app_received(uint8_t *data, uint16_t len)
 	
 	switch (msg_type) {
 		case MQTT_MSG_TYPE_CONNECT:
+				app_connected();
 			break;
 		case MQTT_MSG_TYPE_CONNACK:
 			if (data[2] == 0) {
@@ -232,19 +233,23 @@ void app_init(void)
 
 void app_tick(void)
 {
-	uint16_t len = 0;
-	static uint32_t prev;
-	static uint32_t prev2;
-	uint32_t now;
+	static uint32_t prev = 0;
+	static uint32_t prev2 = 0;
+	uint32_t now = HAL_GetTick();	
 	
-	now = HAL_GetTick();
-	
-	if (now - prev > (MQTT_KEEP_ALIVE * 1000)) {
+	if (now - prev > (1 * 1000)) {//MQTT_KEEP_ALIVE
 		prev = now;
 		mqtt_ping();
+		//mqtt_publish("123456789","wxc hello ",20, 1);
 	}	
-	
-	// if (now - prev2 > 1000) {
+	 if (now - prev2 > 1000)
+	 {
+		 prev2 = now;
+		 if (mqtt_is_connected)
+		 {
+			 mqtt_publish("123456789","wxc hello ",11, 1);
+		 }
+	 }
 	// 	prev2 = now;
 	// 	if (mqtt_is_connected) {
 	// 		len = sprintf((char*)buf, "%.2f", app_sensor_read_tmp());

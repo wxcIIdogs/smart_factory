@@ -129,8 +129,7 @@ bool  Wifi_TcpIp_Close(uint8_t LinkId);
 bool  Wifi_TcpIp_SetEnableTcpServer(uint16_t PortNumber);
 bool  Wifi_TcpIp_SetDisableTcpServer(uint16_t PortNumber);
 bool  Wifi_TcpIp_SendDataUdp(uint8_t LinkId,uint16_t dataLen,uint8_t *data);
-bool  Wifi_TcpIp_SendDataTcp(uint8_t LinkId,uint16_t dataLen,uint8_t *data);
-
+bool  Wifi_TcpIp_SendDataTcp(uint8_t LinkId,uint8_t *data,uint16_t dataLen);
 #endif
 
 

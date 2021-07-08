@@ -373,7 +373,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;..\modules\dma_usart_drive;..\modules\letter_shell;..\application;..\modules\esp8266</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;..\modules\dma_usart_drive;..\modules\letter_shell;..\application;..\modules\esp8266;..\modules\mqtt</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -636,20 +636,40 @@
               <FileType>1</FileType>
               <FilePath>..\modules\esp8266\Wifi.c</FilePath>
             </File>
+            <File>
+              <FileName>mqtt-msg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\modules\mqtt\mqtt-msg.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>userApp</GroupName>
           <Files>
             <File>
-              <FileName>WifiUser.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\modules\esp8266\WifiUser.c</FilePath>
-            </File>
-            <File>
               <FileName>shellUsart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\application\shellUsart.c</FilePath>
+            </File>
+            <File>
+              <FileName>pointManager.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\pointManager.c</FilePath>
+            </File>
+            <File>
+              <FileName>WifiUser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\WifiUser.c</FilePath>
+            </File>
+            <File>
+              <FileName>wirelessDevice.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\wirelessDevice.c</FilePath>
+            </File>
+            <File>
+              <FileName>mqttApp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\mqttApp.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -36,7 +36,7 @@ void  Wifi_UserProcess(void)
     if(last!=2)
     {
 			//Wifi.MyGateWay
-      Wifi_TcpIp_StartTcpConnection(0,"192.168.0.106",777,10);
+      Wifi_TcpIp_StartTcpConnection(0,"192.168.0.106",777,10); 	//123.56.87.60  "192.168.0.106",777   
       wifiConnectFlag = 1;
     }
     last=2;
@@ -51,6 +51,6 @@ void  Wifi_UserGetUdpData(uint8_t LinkId,uint16_t DataLen,uint8_t *Data)
 void  Wifi_UserGetTcpData(uint8_t LinkId,uint16_t DataLen,uint8_t *Data)
 {
   //Wifi_TcpIp_SendDataTcp(LinkId,2,(uint8_t*)"OK");
-  app_received(DataLen,Data);
+  app_received(Data,DataLen);
 }
 //#######################################################################################
