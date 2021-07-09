@@ -10,7 +10,7 @@
 #define _MQTTAPP_H
 
 #include <main.h>
-#include "Wifi.h"
+#include "WifiUser.h"
 
 #define MQTT_BUF_LEN				1024
 #define MQTT_TOPIC_MAX              32
@@ -19,7 +19,7 @@
 
 #define APP_SOCKET_NO               0
 
-#define send                    	Wifi_TcpIp_SendDataTcp
+#define send                    	wifiWriteData
 #define DEBUG_PRINT(format,...)		printf(format,##__VA_ARGS__);
 
 

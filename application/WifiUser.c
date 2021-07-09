@@ -1,56 +1,36 @@
 
-#include "Wifi.h"
+#include "WifiLib.h"
 #include "mqttApp.h"
-
+#include "revDataInfo.h"
 static int wifiConnectFlag = 0;
-//#######################################################################################
+//ge wifi connect 1:ok  0:error
 int getWifiConnectFlag()
 {
   return wifiConnectFlag;
 }
 
-//#######################################################################################
-void	Wifi_UserInit(void)
+void wifiRevData(uint8_t *buff,int32_t len)
 {
-	Wifi_SetMode(WifiMode_Station);
-  //Wifi_SetMode(WifiMode_SoftAp); 
-
-  while (Wifi_Station_ConnectToAp("wxc","853976858",NULL) == false);
- 
-    
-}
-//#######################################################################################
-void  Wifi_UserProcess(void)
-{
-  static uint8_t last=0;
-  if(strstr(Wifi.MyIP,"0.0.0.0")!=NULL)
-  {    
-    if(last!=1)
-		{
-			wifiConnectFlag = 0;
-		}
-    last=1;
+  if(getWifiConnectFlag())
+  {
+    //connect success
+    app_received(buff,len);
   }
   else
   {
-    if(last!=2)
-    {
-			//Wifi.MyGateWay
-      Wifi_TcpIp_StartTcpConnection(0,"192.168.0.106",777,10); 	//123.56.87.60  "192.168.0.106",777   
-      wifiConnectFlag = 1;
-    }
-    last=2;
+    setWifiData(buff,len);
   }
+  printf("%s\r\n",buff);
 }
-//#######################################################################################
-void  Wifi_UserGetUdpData(uint8_t LinkId,uint16_t DataLen,uint8_t *Data)
+
+void initWifiusart()
+{		
+	createFifoRev(&huart2,wifiRevData,UART_REV_DMA);
+  wifiConnectFlag = wifiInit();
+}
+
+void wifiWriteData(uint8_t *data,int len)
 {
-  Wifi_TcpIp_SendDataUdp(LinkId,2,(uint8_t*)"OK");
+  wifi_sendData(data,len);
 }
-//#######################################################################################
-void  Wifi_UserGetTcpData(uint8_t LinkId,uint16_t DataLen,uint8_t *Data)
-{
-  //Wifi_TcpIp_SendDataTcp(LinkId,2,(uint8_t*)"OK");
-  app_received(Data,DataLen);
-}
-//#######################################################################################
+

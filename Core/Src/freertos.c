@@ -31,6 +31,7 @@
 #include "Wifi.h"
 //#include "GPS.h"
 #include "mqttApp.h"
+#include "WifiUser.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -217,12 +218,13 @@ void StartMainTask(void *argument)
 	initShellusart();
 //  GPS_Init();
   __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
-  app_init();
+  app_init();   //mqtt
   /* Infinite loop */
   for(;;)
   {	
     if(getWifiConnectFlag())
     {
+      //wifi success
       app_tick();
     }
 		
@@ -266,13 +268,10 @@ void revGpsDataFunc(void *argument)
 void wifiTask(void *argument)
 {
   /* USER CODE BEGIN wifiTask */
-	Wifi_Init(osPriorityHigh);
-	__HAL_UART_ENABLE_IT(&huart2,UART_IT_RXNE);
-	
+  initWifiusart();
   /* Infinite loop */
   for(;;)
   {
-		WifiTask(argument);
     osDelay(1);
   }
   /* USER CODE END wifiTask */
@@ -316,10 +315,6 @@ void Callback02(void *argument)
 /* USER CODE BEGIN Application */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == &huart2)
-	{
-		Wifi_RxCallBack();
-	}
 	if(huart == &huart4)
 	{
 //		GPS_CallBack();
