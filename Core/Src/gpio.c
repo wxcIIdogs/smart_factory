@@ -50,7 +50,7 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, ESP_RESET_Pin|ESP_IO_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, ESP_RESET_Pin|ESP_IO_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LED_R_Pin|LED_G_Pin|LED_B_Pin, GPIO_PIN_RESET);

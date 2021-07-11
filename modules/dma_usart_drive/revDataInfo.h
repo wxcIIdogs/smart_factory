@@ -15,8 +15,8 @@
 #define UART_SEND_ANSY			0x05
 
 #define UARTINFO_COUNT       	0x05
-#define UARTINFO_SIZE			256
-#define UARTINFO_SEND_SIZE		64
+#define UARTINFO_SIZE			512
+#define UARTINFO_SEND_SIZE		256
 /**********************end define *****************************************/
 
 

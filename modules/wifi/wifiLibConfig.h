@@ -9,8 +9,8 @@
 
 
 #define REMOTE_IP       "192.168.0.106"
-#define REMOTE_PORT     "1883"
-#define CONNECT_TIME_OUT    10
+#define REMOTE_PORT     1883
+#define CONNECT_TIME_OUT    20
 
 #define huart           huart2
 

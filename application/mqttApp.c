@@ -9,7 +9,8 @@
 #include "mqttApp.h"
 #include <string.h>
 #include "mqtt-msg.h"
-#include "Wifi.h"
+#include "WifiUser.h"
+#include "stdio.h"
 static const uint8_t target_host[4] = {123, 56, 87, 60};
 static const uint16_t target_port = 1883;
 static uint8_t buf[100];
@@ -55,7 +56,7 @@ static void mqtt_connect(uint8_t *host, uint16_t port, char* cid)
 	connect_info.clean_session = 0;
 	
 	connect_msg = mqtt_msg_connect(&mqtt_conn, &connect_info);
-	
+	send(APP_SOCKET_NO, connect_msg->data, connect_msg->length);
 	// connect(APP_SOCKET_NO, host, port);
 }
 
@@ -77,7 +78,7 @@ void mqtt_publish(char *topic, char *payload, uint16_t payload_length, int qos)
 	
 	rslt = send(APP_SOCKET_NO, msg_ptr->data, msg_ptr->length);
 	
-	DEBUG_PRINT("send : %d", rslt)
+	DEBUG_PRINT("send : %d\n", rslt)
 	
 	if (qos == 0) {
 		mqtt_published();
@@ -117,8 +118,6 @@ static void mqtt_ping(void)
 static void mqtt_connected(void)
 {
 	DEBUG_PRINT("MQTT connectted.")
-
-	mqtt_subscribe("iot/deaware/sn0", 0);
 	mqtt_is_connected = 1;
 }
 
@@ -131,7 +130,7 @@ static void mqtt_disconnected(void)
 
 static void mqtt_published(void)
 {
-	DEBUG_PRINT("MQTT published.")
+//	DEBUG_PRINT("MQTT published.")
 }
 
 static void mqtt_subscribed(void)
@@ -172,7 +171,7 @@ void app_received(uint8_t *data, uint16_t len)
 	char *data_ptr;
 	uint16_t data_len = MQTT_DATA_MAX;
 	
-	DEBUG_PRINT("Received : %d", len)
+//	DEBUG_PRINT("Received : %d", len)
 	
 	msg_type = mqtt_get_type(data);
 	
@@ -181,7 +180,8 @@ void app_received(uint8_t *data, uint16_t len)
 				app_connected();
 			break;
 		case MQTT_MSG_TYPE_CONNACK:
-			if (data[2] == 0) {
+			if (data[2] == 0x01) 
+			{
 				mqtt_connected();
 			}
 			break;
@@ -229,6 +229,7 @@ void app_init(void)
 {
 	mqtt_init();
 	mqtt_connect((uint8_t*)target_host, target_port, "wxcClient");
+	mqtt_subscribe("987654321",1);
 }
 
 void app_tick(void)
@@ -237,10 +238,10 @@ void app_tick(void)
 	static uint32_t prev2 = 0;
 	uint32_t now = HAL_GetTick();	
 	
-	if (now - prev > (1 * 1000)) {//MQTT_KEEP_ALIVE
+	if (now - prev > (MQTT_KEEP_ALIVE * 1000)) 
+	{
 		prev = now;
 		mqtt_ping();
-		//mqtt_publish("123456789","wxc hello ",20, 1);
 	}	
 	 if (now - prev2 > 1000)
 	 {
@@ -250,16 +251,4 @@ void app_tick(void)
 			 mqtt_publish("123456789","wxc hello ",11, 1);
 		 }
 	 }
-	// 	prev2 = now;
-	// 	if (mqtt_is_connected) {
-	// 		len = sprintf((char*)buf, "%.2f", app_sensor_read_tmp());
-	// 		mqtt_publish("iot/deaware/tmp", (char*)buf, len, 0);
-			
-	// 		len = sprintf((char*)buf, "%.2f", app_sensor_read_hum());
-	// 		mqtt_publish("iot/deaware/hum", (char*)buf, len, 0);
-			
-	// 		len = sprintf((char*)buf, "%.3f", app_sensor_read_psr() / 10);
-	// 		mqtt_publish("iot/deaware/psr", (char*)buf, len, 0);
-	// 	}
-	// }
 }

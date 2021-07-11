@@ -373,7 +373,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;..\modules\dma_usart_drive;..\modules\letter_shell;..\application;..\modules\esp8266;..\modules\mqtt</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;..\modules\dma_usart_drive;..\modules\letter_shell;..\application;..\modules\wifi;..\modules\mqtt;..\modules\gps</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -632,14 +632,24 @@
               <FilePath>..\modules\letter_shell\shell_ext.c</FilePath>
             </File>
             <File>
-              <FileName>Wifi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\modules\esp8266\Wifi.c</FilePath>
-            </File>
-            <File>
               <FileName>mqtt-msg.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\modules\mqtt\mqtt-msg.c</FilePath>
+            </File>
+            <File>
+              <FileName>wifiLib.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\modules\wifi\wifiLib.c</FilePath>
+            </File>
+            <File>
+              <FileName>wifiLibConfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\modules\wifi\wifiLibConfig.h</FilePath>
+            </File>
+            <File>
+              <FileName>GPS.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\modules\gps\GPS.c</FilePath>
             </File>
           </Files>
         </Group>

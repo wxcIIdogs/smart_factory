@@ -161,7 +161,16 @@ void initWirelessUsart()
 
 void wirelessWriteDebug(uint8_t *data,int len)
 {
-	HAL_UART_Transmit(&huart3,data,len,0xFF);
+	uint8_t buff[300];
+	buff[0] = 0xFE;
+	buff[1] = len + 4;
+	buff[2] = 0x91;
+	buff[3] = 0x90;
+	buff[4] = 0x01;
+	buff[5] = 0x00;
+	memcpy(buff + 6,data,len);
+	buff[len + 6] = 0xFF;
+	HAL_UART_Transmit(&huart3,buff,len + 7,0xFF);
 }
 
 

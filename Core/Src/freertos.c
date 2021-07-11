@@ -28,10 +28,10 @@
 /* USER CODE BEGIN Includes */
 #include "shellUsart.h"
 #include "gpio.h"
-#include "Wifi.h"
-//#include "GPS.h"
+#include "GPS.h"
 #include "mqttApp.h"
 #include "WifiUser.h"
+#include "wirelessDevice.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -216,9 +216,15 @@ void StartMainTask(void *argument)
 {
   /* USER CODE BEGIN StartMainTask */
 	initShellusart();
+	initWirelessUsart();
 //  GPS_Init();
-  __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
+//  __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
+  while(!getWifiConnectFlag())
+  {
+	osDelay(10);
+  }
   app_init();   //mqtt
+  
   /* Infinite loop */
   for(;;)
   {	
@@ -247,14 +253,15 @@ void revGpsDataFunc(void *argument)
   /* USER CODE BEGIN revGpsDataFunc */
 
   /* Infinite loop */
-  for(;;)
-  {
+	for(;;)
+	{
 		LED_OPEN_B;
 		osDelay(300);
 		LED_CLOSE_B;
 		osDelay(300);
-    osDelay(1);
-  }
+		osDelay(1);
+		wirelessWriteDebug((uint8_t *)"hello world",11);
+	}
   /* USER CODE END revGpsDataFunc */
 }
 
@@ -268,13 +275,16 @@ void revGpsDataFunc(void *argument)
 void wifiTask(void *argument)
 {
   /* USER CODE BEGIN wifiTask */
-  initWifiusart();
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END wifiTask */
+	
+	HAL_GPIO_WritePin(GPIOA, ESP_RESET_Pin, GPIO_PIN_SET);
+	osDelay(1000);
+	initWifiusart();
+	/* Infinite loop */
+	for(;;)
+	{
+	osDelay(1);
+	}
+	/* USER CODE END wifiTask */
 }
 
 /* USER CODE BEGIN Header_dataUser */
@@ -315,7 +325,7 @@ void Callback02(void *argument)
 /* USER CODE BEGIN Application */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == &huart4)
+//	if(huart == &huart4)
 	{
 //		GPS_CallBack();
 	}  

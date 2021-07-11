@@ -2,6 +2,8 @@
 #include "WifiLib.h"
 #include "mqttApp.h"
 #include "revDataInfo.h"
+
+#include "stdio.h"
 static int wifiConnectFlag = 0;
 //ge wifi connect 1:ok  0:error
 int getWifiConnectFlag()
@@ -19,18 +21,19 @@ void wifiRevData(uint8_t *buff,int32_t len)
   else
   {
     setWifiData(buff,len);
+	printf("%s\r\n",buff);
   }
-  printf("%s\r\n",buff);
+  
 }
 
 void initWifiusart()
 {		
 	createFifoRev(&huart2,wifiRevData,UART_REV_DMA);
-  wifiConnectFlag = wifiInit();
+	wifiConnectFlag = wifiInit();
 }
 
-void wifiWriteData(uint8_t *data,int len)
+int wifiWriteData(int id,uint8_t *data,int len)
 {
-  wifi_sendData(data,len);
+  return wifi_sendData(data,len);
 }
 
