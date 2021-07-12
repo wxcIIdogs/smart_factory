@@ -231,11 +231,12 @@ void StartMainTask(void *argument)
     if(getWifiConnectFlag())
     {
       //wifi success
-      app_tick();
+      app_tick();     
     }
-		
+    app_loopSendData();
+		loopPointHeart();
 //    GPS_Process();
-    osDelay(10);
+    osDelay(1);
 
   }
   /* USER CODE END StartMainTask */
@@ -260,7 +261,7 @@ void revGpsDataFunc(void *argument)
 		LED_CLOSE_B;
 		osDelay(300);
 		osDelay(1);
-		wirelessWriteDebug((uint8_t *)"hello world",11);
+		wirelessSendData((uint8_t *)"hello world",11);
 	}
   /* USER CODE END revGpsDataFunc */
 }
@@ -301,6 +302,7 @@ void dataUser(void *argument)
   for(;;)
   {
     osDelay(1);
+    
   }
   /* USER CODE END dataUser */
 }

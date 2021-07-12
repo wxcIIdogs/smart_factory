@@ -255,9 +255,9 @@ void wifi_userMain()
     sg_wifiInitFlag &= wifi_Station_DhcpEnable(1);    
     sg_wifiInitFlag &= wifi_Station_ConnectToAp(SSID,PASSWD);
     sg_wifiInitFlag &= wifi_TcpIp_StartTcpConnection(REMOTE_IP,REMOTE_PORT,CONNECT_TIME_OUT);
-		sg_wifiInitFlag &= wifi_SetCipmode(1);
-		sg_wifiInitFlag &= wifi_cipSend();
-		printf("sg_wifiInitFlag = %d\r\n",sg_wifiInitFlag);
+    sg_wifiInitFlag &= wifi_SetCipmode(1);
+    sg_wifiInitFlag &= wifi_cipSend();
+    printf("sg_wifiInitFlag = %d\r\n",sg_wifiInitFlag);
 }
 /**
  * 

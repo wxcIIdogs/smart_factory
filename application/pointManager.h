@@ -2,9 +2,9 @@
 #define __POINTMANAGER_H_
 
 
-void setPointId(unsigned char *id);
+void setPointId(int id);
 void loopPointHeart(void);
-
+int getPointIDData(unsigned char *buff);
 #endif
 
 

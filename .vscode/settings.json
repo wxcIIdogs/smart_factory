@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "queue.h": "c",
+        "mqttapp.h": "c",
+        "wifi.h": "c",
+        "wificonfig.h": "c"
+    }
+}

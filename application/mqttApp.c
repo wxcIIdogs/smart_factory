@@ -6,14 +6,17 @@
   ******************************************************************************
 	*/
 
+#include "queue.h"
+#include "task.h"
 #include "mqttApp.h"
 #include <string.h>
 #include "mqtt-msg.h"
 #include "WifiUser.h"
 #include "stdio.h"
+#include "wirelessDevice.h"
 static const uint8_t target_host[4] = {123, 56, 87, 60};
 static const uint16_t target_port = 1883;
-static uint8_t buf[100];
+
 
 static uint8_t mqtt_buf[MQTT_BUF_LEN];
 static uint8_t mqtt_is_connected = 0;
@@ -23,6 +26,11 @@ static mqtt_connect_info_t connect_info;
 #define MQTT_KEEP_ALIVE     30
 
 static mqtt_message_t *connect_msg;
+
+QueueHandle_t mqtt_SendQueue;
+QueueHandle_t mqtt_RevQueue;
+
+
 
 
 static void mqtt_init(void);
@@ -138,15 +146,23 @@ static void mqtt_subscribed(void)
 	DEBUG_PRINT("MQTT subscribed.")
 }
 
+
+
+
 static void mqtt_received(char *topic, uint16_t topic_len, char *data, uint16_t data_len)
 {
-	strncpy((char*)buf, topic, topic_len);
-	buf[topic_len] = '\0';
+	stu_revDataInfo temp;
+
+	strncpy((char*)temp.topic, topic, topic_len);
+	temp.topic[topic_len] = '\0';
 	
-	strncpy((char*)buf + topic_len + 1, data, data_len);
-	buf[topic_len + 1 + data_len] = '\0';
-	
-	DEBUG_PRINT("MQTT received from %s : %s", buf, (buf + topic_len + 1))
+	strncpy((char*)temp.buff, data, data_len);
+	temp.buff[data_len] = '\0';
+	temp.data_len = data_len;
+
+	xQueueSend(mqtt_RevQueue,(void *)&temp,1);
+
+	// DEBUG_PRINT("MQTT received from %s : %s", buf, (buf + topic_len + 1))
 }
 
 void app_connected(void)
@@ -227,6 +243,8 @@ void app_sent(void)
 
 void app_init(void)
 {
+	mqtt_SendQueue = xQueueCreate(20,sizeof(stu_mqttSendInfo));
+	mqtt_RevQueue = xQueueCreate(20,sizeof(stu_revDataInfo));
 	mqtt_init();
 	mqtt_connect((uint8_t*)target_host, target_port, "wxcClient");
 	mqtt_subscribe("987654321",1);
@@ -235,20 +253,84 @@ void app_init(void)
 void app_tick(void)
 {
 	static uint32_t prev = 0;
-	static uint32_t prev2 = 0;
+	static uint32_t prev2_heart = 0;
 	uint32_t now = HAL_GetTick();	
 	
 	if (now - prev > (MQTT_KEEP_ALIVE * 1000)) 
 	{
 		prev = now;
 		mqtt_ping();
-	}	
-	 if (now - prev2 > 1000)
-	 {
-		 prev2 = now;
-		 if (mqtt_is_connected)
-		 {
-			 mqtt_publish("123456789","wxc hello ",11, 1);
-		 }
-	 }
+	}
+	if (now - prev2_heart > 10000)	//10s send heart
+	{
+		prev2_heart = now;
+		if (mqtt_is_connected)
+		{
+			stu_mqttSendInfo temp;
+			temp.len = getPointIDData(temp.buff);
+			uint8_t buff[0xff+20];
+			int index = 0;
+			buff[index++] = 0x02;
+			buff[index++] = temp.len * 3;			
+			memcpy(buff+ index, temp.buff,temp.len * 3);			
+			index += (temp.len * 3);
+			memcpy(buff+index,&prev2_heart,4);
+			index += 4;
+			for(int i = 2 ; i < index ; i ++)
+			{
+				temp.crc += buff[i];
+			}
+			buff[index++] = temp.crc;
+
+			mqtt_publish("123456789",buff,index, 1);
+		}
+	}
+}
+
+//1ms
+void app_loopSendData()
+{
+	stu_mqttSendInfo temp;
+	if(mqtt_is_connected && xQueueReceive(mqtt_SendQueue,(void *)&temp,1) )
+	{
+		uint8_t buff[0xff+20];
+		int index = 0;
+		buff[index++] = temp.cmd;
+		buff[index++] = temp.len + 2;
+		buff[index++] = temp.cmd >> 8;
+		buff[index++] = temp.cmd & 0x00FF;
+		memcpy(buff+ index, temp.buff,temp.len);
+		index += temp.len;
+		memcpy(buff+index,&temp.count,4);
+		index += 4;
+		buff[index++] = temp.crc;
+		mqtt_publish("123456789",buff,index, 1);
+	}
+	stu_revDataInfo rev_temp;
+	if(xQueueReceive(mqtt_RevQueue,(void *)&rev_temp,1))
+	{
+		if(strcmp(rev_temp.topic,"987654321") == 0)
+		{
+			if(rev_temp.buff[0] == 0xA0)
+				wirelessSendData(rev_temp.buff + 1,rev_temp.data_len - 1);
+		}
+	}
+}
+void app_mqttSetSendBuff(uint8_t *buff,int len,int cmd)
+{
+	static int s_count = 0;
+	stu_mqttSendInfo temp;
+	temp.count = s_count++;
+	memcpy(temp.buff,buff,len);
+	temp.pointIP = cmd;
+	temp.len = len;
+	temp.cmd = 0x01;
+	temp.crc += (temp.cmd + temp.len + temp.pointIP + temp.count);
+	for(int i = 0 ; i < len ; i ++)
+	{
+		temp.crc += temp.buff[i];
+	}
+	if(!mqtt_is_connected)
+		return;			
+	xQueueSend(mqtt_SendQueue,( void * )&temp,0);
 }

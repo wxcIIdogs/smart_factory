@@ -2,22 +2,13 @@
 #include "revDataInfo.h"
 #include "wirelessDevice.h"
 #include "pointManager.h"
+#include "mqttApp.h"
 /*
 *author:Wxc
 *info:
 *data: 2021-07-06
 */
-typedef enum
-{    
-    WIRE_HEAD = 0,
-    WIRE_CMD,
-    WIRE_LENGTH,
-    WIRE_DATA,
-    WIRE_COUNT,
-    WIRE_CRC,
-    WIRE_NONE,
-}wireLessEnum;
-
+#if 0
 void ansyWireLessData(uint8_t *buff,int32_t len,wireLessEnum flag)
 {
 
@@ -125,22 +116,108 @@ void ansyWireLessData(uint8_t *buff,int32_t len,wireLessEnum flag)
             break;
         }    
     }
-    
 }
+#endif
+// typedef enum
+// {    
+//     WIRE_HEAD = 0,
+//     WIRE_CMD,
+//     WIRE_LENGTH,
+//     WIRE_DATA,
+//     WIRE_COUNT,
+//     WIRE_CRC,
+//     WIRE_NONE,
+// }wireLessEnum;
 
+void ansyWireLessData(uint8_t *buff,int32_t len,int cmd)
+{
+    //set point heart 
+    setPointId(cmd);
+    //save data to send to mqtt
+    app_mqttSetSendBuff(buff,len,cmd);
+}
 
 void wirelessRevData(uint8_t *buff,int32_t len)
 {
     //rev and ansy data
     static int s_lastTime = 0;
-    if(HAL_GetTick() - s_lastTime > 100)
+    static int s_flag = WIRE_HEAD;
+    static int s_len = 0;
+    static int s_count = 0;
+    static int s_IPAddress = 0;
+    static uint8_t s_revData[0xFF];
+    if(HAL_GetTick() - s_lastTime > 50)
     {
-        s_lastTime = HAL_GetTick();
-        ansyWireLessData(buff,len,WIRE_HEAD);
+        s_flag = WIRE_HEAD;
+        s_count = 0;
     }
-    else
+    for(int i = 0; i < len ; i ++)
     {
-        ansyWireLessData(buff,len,WIRE_NONE);
+        uint8_t data = buff[i];
+        if(s_flag != WIRE_HEAD && s_flag != WIRE_CRC && i < len - 1)
+        {
+            if(data == 0xFE && buff[i+1] == 0xFD)
+            {
+                data == 0xFF;
+                i++;
+            }
+            if(data == 0xFE && buff[i+1] == 0xFC)
+            {
+                data == 0xFE;
+                i++;
+            }            
+        }
+        switch (s_flag)
+        {
+        case WIRE_HEAD:
+            if(data == 0xFE)        
+            {
+                s_flag = WIRE_LENGTH;
+            }
+        case WIRE_LENGTH:
+            s_len = data;
+            s_flag = WIRE_CMD;
+            break;
+        case WIRE_CMD:
+            s_count ++;
+            if(s_count == 2)
+            {
+                s_count = 0;
+                s_flag == WIRE_COUNT;
+                s_IPAddress = 0;
+            }            
+            break;
+        case WIRE_COUNT:
+            s_count ++;            
+            if(s_count == 1)
+            {
+                s_IPAddress += (data << 8);
+            }
+            else
+            {
+                s_IPAddress += data;
+                s_count = 0;
+                s_flag == WIRE_DATA;                
+            }
+            break;
+        case WIRE_DATA:            
+            s_revData[s_count++] = data;
+            if(s_count == s_len)
+            {
+                s_count = 0;
+                s_flag = WIRE_CRC;
+            }
+            break;
+        case WIRE_CRC:
+            if(data == 0xFF)
+            {
+                //success
+                s_flag = WIRE_HEAD;
+                ansyWireLessData(s_revData,s_len,s_IPAddress);
+            }
+        default:
+            break;
+        }
     }
 }
 
@@ -161,16 +238,50 @@ void initWirelessUsart()
 
 void wirelessWriteDebug(uint8_t *data,int len)
 {
-	uint8_t buff[300];
-	buff[0] = 0xFE;
-	buff[1] = len + 4;
-	buff[2] = 0x91;
-	buff[3] = 0x90;
-	buff[4] = 0x01;
-	buff[5] = 0x00;
-	memcpy(buff + 6,data,len);
-	buff[len + 6] = 0xFF;
+	
 	HAL_UART_Transmit(&huart3,buff,len + 7,0xFF);
 }
 
+
+void wirelessSendData(uint8_t *revbuff,int len)
+{
+    int index = 0;
+    uint8_t buff[0xff+30];    
+	buff[index++] = 0xFE;    
+    if(len + 2 == 0xFF)
+    {
+        buff[index++] = 0xFE;    
+        buff[index++] = 0xFD;            
+    }
+    else if(len + 2 == 0xFE)
+    {
+        buff[index++] = 0xFE;    
+        buff[index++] = 0xFC; 
+    }    
+    else
+        buff[index++] = len + 2;    
+
+	buff[index++] = 0x91;
+	buff[index++] = 0x90;
+
+    for(int i = 0; i < len ; i ++)
+    {
+        if(revbuff[i] == 0xFF)
+        {
+            buff[index++] = 0xFE;    
+            buff[index++] = 0xFD;            
+        }
+        else if(revbuff[i]  == 0xFE)
+        {
+            buff[index++] = 0xFE;    
+            buff[index++] = 0xFC; 
+        }    
+        else
+            buff[index++] = revbuff[i];   
+    }	
+	
+
+	buff[index++] = 0xFF;
+    wirelessWriteDebug(buff,index);
+}
 

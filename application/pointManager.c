@@ -16,9 +16,9 @@ typedef struct
 }stu_pointHeart;
 static stu_pointHeart sg_pointHeartBuff[100];
 static int sg_heartBuffLen = 0;
-void setPointId(uint8_t *id)
+void setPointId(int id)
 {
-    int pointID = id[0] << 8 | id[1];
+    int pointID = id;
     for(int i = 0 ; i < sg_heartBuffLen ; i ++)
     {
         if(pointID == sg_pointHeartBuff[i].pointID)
@@ -33,6 +33,17 @@ void setPointId(uint8_t *id)
     sg_heartBuffLen++;
 }
 
+int getPointIDData(uint8_t *buff)
+{
+    int index = 0;
+    for(int i = 0; i < sg_heartBuffLen ; i ++)
+    {        
+        memset(buff+index,sg_pointHeartBuff[i].pointID,2);
+        index += 2;
+        buff[index++] = sg_pointHeartBuff[i].status;
+    }
+    return sg_heartBuffLen;
+}
 
 //1s
 void loopPointHeart()
