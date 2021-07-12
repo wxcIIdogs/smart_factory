@@ -158,12 +158,12 @@ void wirelessRevData(uint8_t *buff,int32_t len)
         {
             if(data == 0xFE && buff[i+1] == 0xFD)
             {
-                data == 0xFF;
+                data = 0xFF;
                 i++;
             }
             if(data == 0xFE && buff[i+1] == 0xFC)
             {
-                data == 0xFE;
+                data = 0xFE;
                 i++;
             }            
         }
@@ -174,6 +174,7 @@ void wirelessRevData(uint8_t *buff,int32_t len)
             {
                 s_flag = WIRE_LENGTH;
             }
+			break;
         case WIRE_LENGTH:
             s_len = data;
             s_flag = WIRE_CMD;
@@ -183,7 +184,7 @@ void wirelessRevData(uint8_t *buff,int32_t len)
             if(s_count == 2)
             {
                 s_count = 0;
-                s_flag == WIRE_COUNT;
+                s_flag = WIRE_COUNT;
                 s_IPAddress = 0;
             }            
             break;
@@ -197,12 +198,12 @@ void wirelessRevData(uint8_t *buff,int32_t len)
             {
                 s_IPAddress += data;
                 s_count = 0;
-                s_flag == WIRE_DATA;                
+                s_flag = WIRE_DATA;                
             }
             break;
         case WIRE_DATA:            
             s_revData[s_count++] = data;
-            if(s_count == s_len)
+            if(s_count == s_len - 4)
             {
                 s_count = 0;
                 s_flag = WIRE_CRC;
@@ -239,7 +240,7 @@ void initWirelessUsart()
 void wirelessWriteDebug(uint8_t *data,int len)
 {
 	
-	HAL_UART_Transmit(&huart3,buff,len + 7,0xFF);
+	HAL_UART_Transmit(&huart3,data,len,0xFF);
 }
 
 
@@ -261,8 +262,8 @@ void wirelessSendData(uint8_t *revbuff,int len)
     else
         buff[index++] = len + 2;    
 
-	buff[index++] = 0x91;
-	buff[index++] = 0x90;
+	buff[index++] = 0x81;
+	buff[index++] = 0x80;
 
     for(int i = 0; i < len ; i ++)
     {

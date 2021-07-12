@@ -6,14 +6,17 @@
   ******************************************************************************
 	*/
 
-#include "queue.h"
-#include "task.h"
+
+#include "FreeRTOS.h"
 #include "mqttApp.h"
 #include <string.h>
 #include "mqtt-msg.h"
 #include "WifiUser.h"
 #include "stdio.h"
 #include "wirelessDevice.h"
+#include "task.h"
+#include "queue.h"
+#include "pointManager.h"
 static const uint8_t target_host[4] = {123, 56, 87, 60};
 static const uint16_t target_port = 1883;
 
@@ -153,14 +156,16 @@ static void mqtt_received(char *topic, uint16_t topic_len, char *data, uint16_t 
 {
 	stu_revDataInfo temp;
 
-	strncpy((char*)temp.topic, topic, topic_len);
+	memcpy((char*)temp.topic, topic, topic_len);
 	temp.topic[topic_len] = '\0';
 	
-	strncpy((char*)temp.buff, data, data_len);
+	memcpy((char*)temp.buff, data, data_len);
 	temp.buff[data_len] = '\0';
 	temp.data_len = data_len;
-
-	xQueueSend(mqtt_RevQueue,(void *)&temp,1);
+	
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;;
+	xQueueSendToBackFromISR(mqtt_RevQueue,( void * )&temp,&xHigherPriorityTaskWoken);
+//	xQueueSend(mqtt_RevQueue,(void *)&temp,1);
 
 	// DEBUG_PRINT("MQTT received from %s : %s", buf, (buf + topic_len + 1))
 }
@@ -282,7 +287,7 @@ void app_tick(void)
 			}
 			buff[index++] = temp.crc;
 
-			mqtt_publish("123456789",buff,index, 1);
+			mqtt_publish("123456789",(char *)buff,index, 1);
 		}
 	}
 }
@@ -296,15 +301,15 @@ void app_loopSendData()
 		uint8_t buff[0xff+20];
 		int index = 0;
 		buff[index++] = temp.cmd;
-		buff[index++] = temp.len + 2;
-		buff[index++] = temp.cmd >> 8;
-		buff[index++] = temp.cmd & 0x00FF;
-		memcpy(buff+ index, temp.buff,temp.len);
-		index += temp.len;
+		buff[index++] = temp.len - 2;
+		buff[index++] = temp.pointIP >> 8;
+		buff[index++] = temp.pointIP & 0x00FF;
+		memcpy(buff+ index, temp.buff,temp.len - 4);
+		index += (temp.len - 4);
 		memcpy(buff+index,&temp.count,4);
 		index += 4;
 		buff[index++] = temp.crc;
-		mqtt_publish("123456789",buff,index, 1);
+		mqtt_publish("123456789",(char *)buff,index, 1);
 	}
 	stu_revDataInfo rev_temp;
 	if(xQueueReceive(mqtt_RevQueue,(void *)&rev_temp,1))
@@ -312,7 +317,7 @@ void app_loopSendData()
 		if(strcmp(rev_temp.topic,"987654321") == 0)
 		{
 			if(rev_temp.buff[0] == 0xA0)
-				wirelessSendData(rev_temp.buff + 1,rev_temp.data_len - 1);
+				wirelessSendData((uint8_t *)rev_temp.buff + 1,rev_temp.data_len - 1);
 		}
 	}
 }
@@ -331,6 +336,9 @@ void app_mqttSetSendBuff(uint8_t *buff,int len,int cmd)
 		temp.crc += temp.buff[i];
 	}
 	if(!mqtt_is_connected)
-		return;			
-	xQueueSend(mqtt_SendQueue,( void * )&temp,0);
+		return;		
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;;
+	xQueueSendToBackFromISR(mqtt_SendQueue,( void * )&temp,&xHigherPriorityTaskWoken);
+	//xQueueSend(mqtt_SendQueue,( void * )&temp,0);
 }
+

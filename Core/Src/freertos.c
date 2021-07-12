@@ -32,6 +32,7 @@
 #include "mqttApp.h"
 #include "WifiUser.h"
 #include "wirelessDevice.h"
+#include "pointManager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -234,7 +235,7 @@ void StartMainTask(void *argument)
       app_tick();     
     }
     app_loopSendData();
-		loopPointHeart();
+	loopPointHeart();
 //    GPS_Process();
     osDelay(1);
 
@@ -261,7 +262,6 @@ void revGpsDataFunc(void *argument)
 		LED_CLOSE_B;
 		osDelay(300);
 		osDelay(1);
-		wirelessSendData((uint8_t *)"hello world",11);
 	}
   /* USER CODE END revGpsDataFunc */
 }
