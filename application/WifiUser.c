@@ -25,6 +25,18 @@ void wifiRevData(uint8_t *buff,int32_t len)
   }
   
 }
+/**
+ *  10ms
+ *
+ */
+void wifiLibLoop()
+{        
+    if(!getwifiRpyFlag())
+    {
+        wifiConnectFlag = wifiInit();
+    }
+}
+
 
 void initWifiusart()
 {		

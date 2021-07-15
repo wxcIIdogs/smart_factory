@@ -2,15 +2,66 @@
 #include "wifiLibConfig.h"
 #include "main.h"
 #include "usart.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include "string.h"
 #include "stdlib.h"
 #include "cmsis_os.h"
 #include "stdio.h"
-static enum_WIFI_CMD sg_wifi_cmd_status = WIFI_NONE;
+static int sg_wifi_cmd_status = 0;
 static int sg_rpych = 0;    
 static int sg_wifiInitFlag = 0;
+static uint8_t sg_revCmdBuff[30];
+
+void setWifiCmdBuff(uint8_t *buff)
+{
+    if(!buff)
+    {        
+        if(sg_revCmdBuff[0] != '\0')
+        {
+            memset(sg_revCmdBuff,0,30);
+        }
+        strcpy(sg_revCmdBuff,buff);
+    }
+}
+int getWifiCmdStatus()
+{
+    return sg_wifi_cmd_status;
+}
+
+
+int getwifiRpyFlag()
+{
+    return sg_wifiInitFlag;
+}
+void wifi_rpyCallBack(uint8_t *buff)
+{
+    sg_wifiInitFlag = 0;
+}
+const static stu_wifiCmdRpyInfo sg_stuWifiCmdStatusBuff[] = 
+{
+    {"WIFI GOT IP",WIFI_RPY_REPLY},
+    {"ALREADY",WIFI_RPY_ALREADY},
+    {"ERROR",WIFI_RPY_ERROR},
+    {"CONNECTED",WIFI_RPY_CONNECT},
+    {"CONNECT",WIFI_RPY_CONNECT},
+    {"CLOSE",WIFI_RPY_CLOSE,wifi_rpyCallBack},
+    {"DISCONNECT",WIFI_RPY_DISCONNECT,wifi_rpyCallBack},
+    {">",WIFI_RPY_TRANSPART},
+    {"OK",WIFI_RPY_OK},
+};
+
+
+int setWifiCmdStatus(int rpy)
+{
+    static int wifiStatus = 1;
+    wifiStatus &= rpy;
+    if(!wifiStatus)
+    {
+        printf("%s cmd had error rpyflag = %d\n",sg_revCmdBuff,sg_rpych);
+    }
+    return wifiStatus;
+}
+
+
 /**
  * 
  * 
@@ -19,93 +70,24 @@ static int sg_wifiInitFlag = 0;
 void setWifiData(uint8_t *oriData,int len)
 {
 //rpy
-    if(strstr((char *)oriData,"WIFI GOT IP") != NULL)
+    for(int i = 0 ; i < ARRAY_LEN(sg_stuWifiCmdStatusBuff) ; i ++)
     {
-        sg_rpych = WIFI_RPY_REPLY;
+        if(strstr(oriData,sg_stuWifiCmdStatusBuff[i].revCmdBuff) != NULL)
+        {
+            sg_rpych |= sg_stuWifiCmdStatusBuff[i].reyStatus;
+            if(sg_stuWifiCmdStatusBuff[i].callback != NULL)
+            {
+                sg_stuWifiCmdStatusBuff[i].callback(sg_stuWifiCmdStatusBuff[i].revCmdBuff);
+            }            
+        }
     }
-		else if(strstr((char *)oriData,"ALREADY") != NULL)
-    {
-        sg_rpych = WIFI_RPY_ALREADY;
-    }
-    else if(strstr((char *)oriData,"ERROR") != NULL)
-    {
-        sg_rpych = WIFI_RPY_ERROR;
-    }
-    else if(strstr((char *)oriData,"CONNECTED") != NULL)
-    {
-        sg_rpych = WIFI_RPY_CONNECT;
-    }
-    else if(strstr((char *)oriData,"CONNECT") != NULL)
-    {
-        sg_rpych = WIFI_RPY_CONNECT;
-    }		
-    else if(strstr((char *)oriData,"CLOSE") != NULL)
-    {
-        sg_wifiInitFlag = 0;
-    }
-    else if(strstr((char *)oriData,"DISCONNECT") != NULL)
-    {
-        sg_wifiInitFlag = 0;
-    }
-		else if(strstr((char *)oriData,">") != NULL)
-    {
-        sg_rpych = WIFI_RPY_TRANSPART;
-    } 
-    else if(strstr((char *)oriData,"OK") != NULL)
-    {
-        sg_rpych = WIFI_RPY_OK;
-    } 
-
+     
 //cmd     
-    if(strstr((char *)oriData,"RFPOWER") != NULL)
+    if(strstr((char *)oriData,sg_revCmdBuff) != NULL)
     {        
-        sg_wifi_cmd_status = WIFI_RFPOWER;
-    }
-    else if(strstr((char *)oriData,"CWMODE_CUR") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CWMODE_CUR;
-    }
-    else if(strstr((char *)oriData,"CIFSR") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CIFSR;
-    }
-    else if(strstr((char *)oriData,"CWQAP") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CWQAP;
-    }
-    else if(strstr((char *)oriData,"CWDHCP_CUR") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CWDHCP_CUR;
-    }
-    else if(strstr((char *)oriData,"CIPSTART") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CIPSTATUS;
-    }
-    else if(strstr((char *)oriData,"CIPMUX") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CIPMUX;
-    }
-    else if(strstr((char *)oriData,"CIPSERVER") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CIPSERVER;
-    }
-    else if(strstr((char *)oriData,"CIPCLOSE") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CIPCLOSE;
-    }                          
-    else if(strstr((char *)oriData,"CWJAP_CUR") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CWJAP_CUR;
-    } 
-    else if(strstr((char *)oriData,"CIPMODE") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CIPMODE;
-    }  
-		else if(strstr((char *)oriData,"CIPSEND") != NULL)
-    {
-        sg_wifi_cmd_status = WIFI_CIPSEND;
-    }  		
-		
+        sg_wifi_cmd_status = 1;
+        
+    }		
 }
 /**
  * 
@@ -115,7 +97,7 @@ void setWifiData(uint8_t *oriData,int len)
 int wifi_sendCmdData(uint8_t *data,int len)
 {
     sg_rpych = 0;
-    sg_wifi_cmd_status = WIFI_NONE;
+    sg_wifi_cmd_status = 0;
     return HAL_UART_Transmit(&huart,data,len,0xff);
 }
 int wifi_sendData(uint8_t *data,int len)
@@ -132,7 +114,7 @@ int wifi_waitAT()
 {
     wifi_sendCmdData("AT\r\n",4);
     osDelay(500);
-    if(sg_rpych == WIFI_RPY_OK)
+    if(sg_rpych & WIFI_RPY_OK)
         return 1;
     else 
         return 0;
@@ -141,10 +123,23 @@ int wifi_RST()
 {
     wifi_sendCmdData("AT+RST\r\n",8);
     osDelay(1000);
-    if(sg_rpych == WIFI_RPY_OK)
+    if(sg_rpych & WIFI_RPY_OK)
         return 1;
     else 
         return 0;
+}
+
+//timeout ms
+int waitWifiCmdStatus(int timeOut,int rpy)
+{
+    for(int i = 0; i < timeOut ; i ++)
+    {
+        osDelay(1);
+        if(sg_wifi_cmd_status && (rpy & rpy))
+            return WIFI_RPY_SUCCESS;
+    }
+    return sg_rpych;
+    
 }
 //1 trasport 
 //0 cmd
@@ -152,9 +147,10 @@ int wifi_SetCipmode(int mode)
 {
     char buff[50];
     int len = sprintf(buff,"AT+CIPMODE=%d\r\n",mode);
+    setWifiCmdBuff("CIPMODE");
     wifi_sendCmdData((uint8_t *)buff,len);
-    osDelay(500);
-    if(sg_rpych == WIFI_RPY_OK && sg_wifi_cmd_status == WIFI_CIPMODE)
+    int rpy = waitWifiCmdStatus(500,WIFI_RPY_OK);    
+    if(rpy == WIFI_RPY_SUCCESS)
         return 1;
     else 
         return 0;
@@ -163,9 +159,10 @@ int wifi_SetRfPower(int Power_0_to_82)
 {
     char buff[50];
     int len = sprintf(buff,"AT+RFPOWER=%d\r\n",Power_0_to_82);
+    setWifiCmdBuff("RFPOWER");
     wifi_sendCmdData((uint8_t *)buff,len);
-    osDelay(500);
-    if(sg_rpych == WIFI_RPY_OK && sg_wifi_cmd_status == WIFI_RFPOWER)
+    int rpy = waitWifiCmdStatus(500,WIFI_RPY_OK);    
+    if(rpy == WIFI_RPY_SUCCESS)
         return 1;
     else 
         return 0;
@@ -175,9 +172,10 @@ int wifi_Station_DhcpEnable(int Enable)
 {    
     char buff[50];
     int len = sprintf(buff,"AT+CWDHCP_CUR=1,%d\r\n",Enable);
+    setWifiCmdBuff("CWDHCP_CUR");
     wifi_sendCmdData((uint8_t *)buff,len);
-    osDelay(500);
-    if(sg_rpych == WIFI_RPY_OK && sg_wifi_cmd_status == WIFI_CWDHCP_CUR)
+    int rpy = waitWifiCmdStatus(500,WIFI_RPY_OK);    
+    if(rpy == WIFI_RPY_SUCCESS)
         return 1;
     else 
         return 0;
@@ -185,33 +183,34 @@ int wifi_Station_DhcpEnable(int Enable)
 int wifi_TcpIp_StartTcpConnection(char *RemoteIp,uint16_t RemotePort,uint16_t TimeOut)
 {    
     char buff[100];
-    int len = sprintf(buff,"AT+CIPSTART=\"TCP\",\"%s\",%d,%d\r\n",RemoteIp,RemotePort,TimeOut);		
-		for(int j = 0 ; j <10 ; j ++)
-		{
-			wifi_sendCmdData((uint8_t *)buff,len);
-			osDelay(1000);		
-			for(int i = 0;  i < 10 ; i ++)
-			{
-				osDelay(500);		
-				if(sg_rpych == WIFI_RPY_REPLY)
-					continue;
-				if(WIFI_RPY_ALREADY == sg_rpych)
-					return 1;
-				if(sg_rpych == WIFI_RPY_CONNECT && sg_wifi_cmd_status == WIFI_CIPSTATUS)
-					return 1;
-				osDelay(500);		
-			}
-		}
-		return 0;
+    int len = sprintf(buff,"AT+CIPSTART=\"TCP\",\"%s\",%d,%d\r\n",RemoteIp,RemotePort,TimeOut);	    
+    for(int j = 0 ; j <10 ; j ++)
+    {
+        setWifiCmdBuff("CIPSTART");
+        wifi_sendCmdData((uint8_t *)buff,len);
+        osDelay(1000);		
+        for(int i = 0;  i < 10 ; i ++)
+        {            		
+            if(sg_rpych & WIFI_RPY_REPLY)
+                continue;
+            if(WIFI_RPY_ALREADY & sg_rpych)
+                return 1;
+            if(sg_rpych & WIFI_RPY_CONNECT && sg_wifi_cmd_status == 1)
+                return 1;
+            osDelay(500);
+        }
+    }
+    return 0;
 }
 
 int wifi_TcpIp_Close()
 {    
     char buff[50];
     int len = sprintf(buff,"AT+CIPCLOSE\r\n");
+    setWifiCmdBuff("CIPCLOSE");
     wifi_sendCmdData((uint8_t *)buff,len);
-    osDelay(500);
-    if(sg_rpych == WIFI_RPY_OK && sg_wifi_cmd_status == WIFI_CIPCLOSE)
+    int rpy = waitWifiCmdStatus(500,WIFI_RPY_OK);    
+    if(rpy == WIFI_RPY_SUCCESS)
         return 1;
     else 
         return 0;
@@ -220,23 +219,22 @@ int wifi_Station_ConnectToAp(char *ssid,char *Pass)
 {    
     char buff[100];
     int len = sprintf(buff,"AT+CWJAP_CUR=\"%s\",\"%s\"\r\n",ssid,Pass);
+    setWifiCmdBuff("CWJAP_CUR");
     wifi_sendCmdData((uint8_t *)buff,len);
-    osDelay(1000);
-		for(int i = 0 ; i < 10 ; i++)
-    {			
-			if(sg_rpych == WIFI_RPY_CONNECT && sg_wifi_cmd_status == WIFI_CWJAP_CUR)
+    int rpy = waitWifiCmdStatus(10000,WIFI_RPY_CONNECT); 
+    if(rpy == WIFI_RPY_SUCCESS)
         return 1;
-			osDelay(1000);
-		}
-		return 0;
+    else 
+        return 0;
 }
 int wifi_cipSend()
 {
 	  char buff[50];
     int len = sprintf(buff,"AT+CIPSEND\r\n");
+    setWifiCmdBuff("CIPSEND");
     wifi_sendCmdData((uint8_t *)buff,len);
-    osDelay(500);
-    if(sg_rpych == WIFI_RPY_TRANSPART && sg_wifi_cmd_status == WIFI_CIPSEND)
+    int rpy = waitWifiCmdStatus(500,WIFI_RPY_TRANSPART);    
+    if(rpy == WIFI_RPY_SUCCESS)
         return 1;
     else 
         return 0;
@@ -249,14 +247,14 @@ void wifi_userMain()
         printf("AT CMD not return\r\n");
         return;
     }
-		wifi_RST();
-    sg_wifiInitFlag = wifi_SetRfPower(82);
+	wifi_RST();
+    setWifiCmdStatus(wifi_SetRfPower(82));
     wifi_TcpIp_Close();
-    sg_wifiInitFlag &= wifi_Station_DhcpEnable(1);    
-    sg_wifiInitFlag &= wifi_Station_ConnectToAp(SSID,PASSWD);
-    sg_wifiInitFlag &= wifi_TcpIp_StartTcpConnection(REMOTE_IP,REMOTE_PORT,CONNECT_TIME_OUT);
-    sg_wifiInitFlag &= wifi_SetCipmode(1);
-    sg_wifiInitFlag &= wifi_cipSend();
+    setWifiCmdStatus(wifi_Station_DhcpEnable(1));
+    setWifiCmdStatus(wifi_Station_ConnectToAp(SSID,PASSWD));
+    setWifiCmdStatus(wifi_TcpIp_StartTcpConnection(REMOTE_IP,REMOTE_PORT,CONNECT_TIME_OUT));
+    setWifiCmdStatus(wifi_SetCipmode(1));
+    sg_wifiInitFlag = setWifiCmdStatus(wifi_cipSend());    
     printf("sg_wifiInitFlag = %d\r\n",sg_wifiInitFlag);
 }
 /**
@@ -266,18 +264,7 @@ void wifi_userMain()
  */
 int wifiInit()
 {
-    sg_wifiInitFlag = 0;
     wifi_userMain();
     return sg_wifiInitFlag;
-
-}
-
-/**
- *  10ms
- *
- */
-void wifiLibLoop()
-{        
-    
 }
 

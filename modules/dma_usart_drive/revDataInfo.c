@@ -38,9 +38,17 @@ int32_t getFifoIndex(void)
 int32_t createFifoRev(UART_HandleTypeDef *uart , revFunc revDataFunc,uint32_t revMode)
 {	
 	int32_t fifoIndex = getFifoIndex();
-	if(fifoIndex <0 || fifoIndex >= UARTINFO_COUNT)
+	if(fifoIndex < 0 || fifoIndex >= UARTINFO_COUNT)
 		return -1;
-
+	for(int32_t i = 0 ; i < UARTINFO_COUNT ; i ++)
+	{
+		if(uart == sg_uartRevFifoBuff[i].uart)
+		{
+			// is you
+			printf("this uart has register\r\n"); 
+			return 0;
+		}
+	}
 	sg_uartRevFifoBuff[fifoIndex].uart = uart;
 	sg_uartRevFifoBuff[fifoIndex].revFunc = revDataFunc;
 	sg_uartRevFifoBuff[fifoIndex].revCmd = revMode;	

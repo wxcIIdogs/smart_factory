@@ -222,7 +222,7 @@ void StartMainTask(void *argument)
 //  __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
   while(!getWifiConnectFlag())
   {
-	osDelay(10);
+	  osDelay(10);
   }
   app_init();   //mqtt
   
@@ -235,7 +235,7 @@ void StartMainTask(void *argument)
       app_tick();     
     }
     app_loopSendData();
-	loopPointHeart();
+	  loopPointHeart();
 //    GPS_Process();
     osDelay(1);
 
@@ -283,7 +283,8 @@ void wifiTask(void *argument)
 	/* Infinite loop */
 	for(;;)
 	{
-	osDelay(1);
+	  osDelay(1);
+    wifiLibLoop();
 	}
 	/* USER CODE END wifiTask */
 }
